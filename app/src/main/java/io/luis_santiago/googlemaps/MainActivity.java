@@ -41,13 +41,16 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 
 import static android.icu.lang.UCharacter.GraphemeClusterBreak.L;
 import static android.os.Build.VERSION_CODES.M;
 
-public class MainActivity extends FragmentActivity implements OnMapReadyCallback, View.OnClickListener, GoogleApiClient.OnConnectionFailedListener, GoogleApiClient.ConnectionCallbacks, LocationListener {
+public class MainActivity extends FragmentActivity implements OnMapReadyCallback,
+        View.OnClickListener, GoogleApiClient.OnConnectionFailedListener,
+        GoogleApiClient.ConnectionCallbacks, LocationListener {
 
     private static final int MY_PERMISSIONS_REQUEST_LOCATION = 0;
     private static final long INTERVAL = 1000 * 10;
@@ -59,7 +62,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private Button location;
     // data structure for location
     private MarkerOptions mylocationMarker;
-    private LatLng finalLocation;
     private Location myLocation;
     // this is for the location of the user
     private FusedLocationProviderClient mFusedLocationClient;
@@ -68,14 +70,16 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private GoogleApiClient mGoogleApiClient;
     private boolean weHavePermission = false;
     private LocationRequest updateLocation;
+    private MarkerOptions a;
+    private Marker m;
 
+    // To set up correctly a new point map is Latitude and Longitude
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         init();
-
         /*
          * Setting the button's click Listener
          * */
@@ -101,11 +105,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void checkPermission() {
-        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION)
+        if (ContextCompat.checkSelfPermission(MainActivity.this,
+                Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
             weHavePermission = true;
         } else {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, MY_PERMISSIONS_REQUEST_LOCATION);
+            ActivityCompat.requestPermissions(this, new String[]
+                    {Manifest.permission.ACCESS_FINE_LOCATION}, MY_PERMISSIONS_REQUEST_LOCATION);
         }
 
         if (weHavePermission) {
@@ -120,7 +126,6 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
             //Creating an instance of the locationClient provided by google play services
             myLocation = LocationServices.FusedLocationApi
                     .getLastLocation(mGoogleApiClient);
-            finalLocation = new LatLng(myLocation.getLongitude(), myLocation.getLatitude());
         }
     }
 
@@ -135,12 +140,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
         if (v.getId() == location.getId()) {
             if (mapReady) {
-                checkPermission();
                 if (myLocation != null) {
                     Log.e("Main Activity", "Latitude" + myLocation.getLatitude());
                     Log.e("Main Activity", "Longitude" + myLocation.getLongitude());
                     flyTo(new LatLng(myLocation.getLatitude(), myLocation.getLongitude()));
-                    addMarker();
                 }
             }
         }
@@ -152,13 +155,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         mgoogleMap = googleMap;
 
 
-        CameraPosition cameraPosition = CameraPosition.builder()
-                .target(new LatLng(12032, 2434))
-                .zoom(14)
-                .build();
-        mgoogleMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-
-
+        a = new MarkerOptions().position(new LatLng( 20, -92))
+        .icon(BitmapDescriptorFactory.fromResource(R.drawable.icons8_marker_48));
+        m = googleMap.addMarker(a);
+        m.setPosition(new LatLng( 20, -92));
     }
 
     @Override
@@ -167,7 +167,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
         switch (requestCode) {
             case MY_PERMISSIONS_REQUEST_LOCATION: {
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (grantResults.length > 0 && grantResults[0] ==
+                        PackageManager.PERMISSION_GRANTED) {
                     Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
                     startActivity(intent);
                     weHavePermission = true;
@@ -178,17 +179,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
     }
 
-    private void addMarker(){
-        mylocationMarker = new MarkerOptions().position(finalLocation)
-                .title("My house")
-                .icon(BitmapDescriptorFactory.fromResource(R.drawable.icons8_marker_48));
 
-        /*
-        * Putting the markers from the OnCreate method
-        * **/
-        mgoogleMap.addMarker(mylocationMarker);
-        Log.e("Main Activity", "Ya agregue el MARKER a position:" + finalLocation);
-    }
     private void init() {
         normal = (Button) findViewById(R.id.normal);
         satelite = (Button) findViewById(R.id.satelite);
@@ -209,7 +200,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
     private void startLocationUpdates() {
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this,
+                Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             // TODO: Consider calling
             //    ActivityCompat#requestPermissions
             // here to request the missing permissions, and then overriding
@@ -227,6 +220,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     protected void onResume() {
         super.onResume();
+        if(mGoogleApiClient.isConnected()){
+            startLocationUpdates();
+            Log.d("Main Activity", "Location update resumed.........");
+        }
     }
 
 
@@ -245,17 +242,25 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     }
 
-
+    // To set up correctly a new point map is longitude and latitude
     @Override
     public void onLocationChanged(Location location) {
         Log.d("Main activity", "Firing onLocationChanged..............................................");
         myLocation = location;
-        Log.e("Location Change", "NEW LOCATION"+ location.getLongitude());
-        Log.e("Location Change", "NEW LOCATION"+ location.getAltitude());
+        Log.e("Location Change", "NEW LOCATION: LATITUDE"+ location.getLatitude());
+        Log.e("Location Change", "NEW LOCATION LONGITUD"+ location.getLongitude());
+        m.setPosition(new LatLng(location.getLatitude(),location.getLongitude()));
 
-        if(myLocation!=null){
-            finalLocation = new LatLng(myLocation.getLatitude(), myLocation.getLongitude());
-            Log.e("Main activity", "UBICACION FINAL"+ finalLocation);
-        }
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if(mgoogleMap!=null)
+        checkPermission();
+    }
+
+    private void updateUI(){
+        //TODO: Create a single method for updating Marker
     }
 }
