@@ -1,11 +1,14 @@
 package io.luis_santiago.googlemaps;
 
 import android.Manifest;
+import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.location.LocationManager;
+import android.os.IBinder;
 import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
@@ -45,6 +48,8 @@ import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnSuccessListener;
 
+import io.luis_santiago.googlemaps.services.MyService;
+
 import static android.icu.lang.UCharacter.GraphemeClusterBreak.L;
 import static android.os.Build.VERSION_CODES.M;
 
@@ -73,6 +78,11 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
     private MarkerOptions a;
     private Marker m;
 
+    /** This is for the bounded service*/
+
+    boolean isBound = false;
+    MyService service;
+
     // To set up correctly a new point map is Latitude and Longitude
 
     @Override
@@ -83,9 +93,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         /*
          * Setting the button's click Listener
          * */
-        satelite.setOnClickListener(this);
+
         location.setOnClickListener(this);
-        normal.setOnClickListener(this);
 
         // This is for setting up the google maps API
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -102,6 +111,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         mGoogleApiClient.connect();
         createLocationRequest();
 
+        /*Setting up the service to send data on to the server*/
+        Intent intent = new Intent(MainActivity.this, MyService.class);
+        bindService(intent,serviceConnection, Context.BIND_AUTO_CREATE);
     }
 
     private void checkPermission() {
@@ -131,19 +143,13 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     @Override
     public void onClick(View v) {
-        if (v.getId() == normal.getId()) {
-            // Set the map to normal
-        }
-
-        if (v.getId() == satelite.getId()) {
-            // Set the map to Satelite
-        }
         if (v.getId() == location.getId()) {
             if (mapReady) {
                 if (myLocation != null) {
                     Log.e("Main Activity", "Latitude" + myLocation.getLatitude());
                     Log.e("Main Activity", "Longitude" + myLocation.getLongitude());
-                    flyTo(new LatLng(myLocation.getLatitude(), myLocation.getLongitude()));
+                }else{
+                    Log.e("Main Activity", "Something is wrong with the location");
                 }
             }
         }
@@ -155,10 +161,19 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         mgoogleMap = googleMap;
 
 
+        CameraPosition cameraPosition = CameraPosition.builder()
+                .target(new LatLng(18.134882,-94.457830))
+                .zoom(14)
+                .build();
+
+        mgoogleMap.moveCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+
+        Log.e("Main activity", "------GETTING THE MARKER------");
         a = new MarkerOptions().position(new LatLng( 20, -92))
-        .icon(BitmapDescriptorFactory.fromResource(R.drawable.icons8_marker_48));
+        .icon(BitmapDescriptorFactory.fromResource(R.drawable.firstperson));
         m = googleMap.addMarker(a);
-        m.setPosition(new LatLng( 20, -92));
+
+        checkPermission();
     }
 
     @Override
@@ -174,6 +189,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
                     weHavePermission = true;
                 } else {
                     // We don't have the permission
+                    Log.e("Main activity", "I never got permission");
                 }
             }
         }
@@ -181,16 +197,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
 
     private void init() {
-        normal = (Button) findViewById(R.id.normal);
-        satelite = (Button) findViewById(R.id.satelite);
         location = (Button) findViewById(R.id.location);
     }
-
-
-    private void flyTo(LatLng lg) {
-        mgoogleMap.animateCamera(CameraUpdateFactory.newLatLng(lg), 10000, null);
-    }
-
 
     private void createLocationRequest() {
         updateLocation = new LocationRequest();
@@ -250,17 +258,27 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         Log.e("Location Change", "NEW LOCATION: LATITUDE"+ location.getLatitude());
         Log.e("Location Change", "NEW LOCATION LONGITUD"+ location.getLongitude());
         m.setPosition(new LatLng(location.getLatitude(),location.getLongitude()));
-
+        if(isBound){
+            service.setCurrentLocation(new LatLng(location.getLatitude(),location.getLongitude()));
+        }
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        if(mgoogleMap!=null)
-        checkPermission();
-    }
 
-    private void updateUI(){
-        //TODO: Create a single method for updating Marker
-    }
+    /*This is for the callbacks on to the local server*/
+
+    private ServiceConnection serviceConnection = new ServiceConnection() {
+        @Override
+        public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
+            Log.e("Main activity", "We are conneted on to the server");
+            MyService.LocalBinder binder = (MyService.LocalBinder) iBinder;
+            service = binder.getService();
+            isBound = true;
+        }
+
+        @Override
+        public void onServiceDisconnected(ComponentName componentName) {
+            isBound = false;
+        }
+    };
+
 }

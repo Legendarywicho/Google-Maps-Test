@@ -11,25 +11,15 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
+        android:gravity="end"
         android:layout_marginBottom="10dp"
         android:orientation="horizontal">
 
-        <Button
-            android:id="@+id/normal"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:text="Seatle"
-            android:layout_height="50dp"/>
-        <Button
-            android:id="@+id/satelite"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:text="Tokyo"
-            android:layout_height="50dp"/>
+
         <Button
             android:id="@+id/location"
-            android:layout_width="0dp"
-            android:layout_weight="1"
+            android:layout_width="150dp"
+            android:height="50dp"
             android:text="My Location"
             android:layout_height="50dp"/>
 
