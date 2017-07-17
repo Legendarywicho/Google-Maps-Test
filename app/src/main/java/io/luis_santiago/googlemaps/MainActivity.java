@@ -85,6 +85,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
 
     // To set up correctly a new point map is Latitude and Longitude
 
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -95,6 +97,9 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
          * */
 
         location.setOnClickListener(this);
+
+
+
 
         // This is for setting up the google maps API
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
