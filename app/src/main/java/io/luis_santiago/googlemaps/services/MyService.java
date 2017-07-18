@@ -4,6 +4,7 @@ import android.app.Service;
 import android.content.Intent;
 import android.location.Location;
 import android.os.Binder;
+import android.os.Handler;
 import android.os.IBinder;
 import android.support.annotation.IntDef;
 import android.util.Log;
@@ -25,16 +26,22 @@ import static android.os.Build.VERSION_CODES.M;
 
 
 public class MyService extends Service {
+
     private final IBinder iBinder = new LocalBinder();
     private LatLng mCurrentLocation;
     private Socket mSocket;
     private JSONObject jo = new JSONObject();
     private String URL = "http://192.168.0.3:8000";
+    private Handler handler;
 
     public MyService() {
     }
 
-
+    public class LocalBinder extends Binder{
+        public MyService getService(){
+            return MyService.this;
+        }
+    }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -59,14 +66,34 @@ public class MyService extends Service {
 
         mSocket.connect();
         Log.e("Service", "-------We are connected to the node js server--------");
+
+        handler = new Handler();
+        super.onCreate();
     }
 
-    public class LocalBinder extends Binder{
-        public MyService getService(){
-            return MyService.this;
+   private Emitter.Listener onNewLocation = new Emitter.Listener() {
+        @Override
+        public void call(final Object... args) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        JSONObject data = (JSONObject) args[0];
+                        String lat;
+                        String longtidue;
+                        try{
+                            lat = data.getString("latitude");
+                            longtidue=data.getString("longitude");
+                        }catch (JSONException e){
+                            Log.e("Main activity", "There was an error on the JSON parsing");
+                        }
+                    }
+                });
         }
-    }
+    };
 
+    public void runOnUiThread(Runnable runnable) {
+        handler.post(runnable);
+    }
 
     public void setCurrentLocation(LatLng lng){
         mCurrentLocation = lng;

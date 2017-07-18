@@ -58,7 +58,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         GoogleApiClient.ConnectionCallbacks, LocationListener {
 
     private static final int MY_PERMISSIONS_REQUEST_LOCATION = 0;
-    private static final long INTERVAL = 1000 * 10;
+    private static final long INTERVAL = 2000 * 10;
     private static final long FASTEST_INTERVAL = 1000 * 5;
 
     // UI buttons
@@ -179,6 +179,8 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         m = googleMap.addMarker(a);
 
         checkPermission();
+        Log.e("Main Activity", "IM ADDING A NEW MARKER");
+        addANewMarker(new LatLng( 20, -92));
     }
 
     @Override
@@ -236,6 +238,7 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         if(mGoogleApiClient.isConnected()){
             startLocationUpdates();
             Log.d("Main Activity", "Location update resumed.........");
+
         }
     }
 
@@ -286,4 +289,10 @@ public class MainActivity extends FragmentActivity implements OnMapReadyCallback
         }
     };
 
+    private void addANewMarker(LatLng lng){
+        mgoogleMap.addMarker(new MarkerOptions()
+                .position(lng)
+                .title("Another person")
+                .icon(BitmapDescriptorFactory.fromResource(R.drawable.firstperson)));
+    }
 }
